@@ -5,14 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:tictactoexomania/Models/TicTacToeLogic.dart';
 import 'package:tictactoexomania/screens/result_screen.dart';
+import 'package:tictactoexomania/screens/welcome_screen.dart';
 import 'package:tictactoexomania/widgets/profileContainerRow.dart';
 import 'package:tictactoexomania/widgets/wrapping_container.dart';
 import 'package:tictactoexomania/constants.dart';
 import 'package:tictactoexomania/Models/UiLogic.dart';
 class Constant {
-  static const String BANNER_ADS = "ca-app-pub-5270778529330824/7746851862";
+  static const String BANNER_ADS = "ca-app-pub-5270778529330824/1042716794";
   // static const String BANNER_ADS = "ca-app-pub-3940256099942544/3419835294"; //test
-  static const String APP_OPEN_ADS = "ca-app-pub-5270778529330824/4838188316";
+  static const String APP_OPEN_ADS = "ca-app-pub-5270778529330824/7874319659";
   // static const String APP_OPEN_ADS = "ca-app-pub-3940256099942544/3419835294";
   static const String INTERSTITIAL_ADS = "ca-app-pub-3940256099942544/1033173712";
   static const String REWARDEAD_ADS = "ca-app-pub-5270778529330824/5194142428";
@@ -40,6 +41,13 @@ class _GameScreenState extends State<GameScreen> {
   int _numRewardedInterstitialLoadAttempts = 0;
   RewardedAd? _rewardedAd;
   int _numRewardedLoadAttempts = 0;
+  // TODO: Add _kAdIndex
+  static final _kAdIndex = 4;
+
+  // TODO: Add a native ad instance
+  BannerAd? _ad;
+  BannerAd? _ad1;
+
   void _createRewardedAd() {
     RewardedAd.load(
         adUnitId: Platform.isAndroid
@@ -191,6 +199,42 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void initState() {
+    BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      size: AdSize.banner,
+      request: AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _ad = ad as BannerAd;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          // Releases an ad resource when it fails to load
+          ad.dispose();
+          print('Ad load failed (code=${error.code} message=${error.message})');
+        },
+      ),
+    ).load();
+    BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      size: AdSize.banner,
+      request: AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _ad1 = ad as BannerAd;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          // Releases an ad resource when it fails to load
+          ad.dispose();
+          print('Ad load failed (code=${error.code} message=${error.message})');
+        },
+      ),
+    ).load();
+
+
     _createInterstitialAd();
     _createRewardedInterstitialAd();
     _createRewardedAd();
@@ -227,9 +271,16 @@ class _GameScreenState extends State<GameScreen> {
     timer?.cancel();
     if(start) startTimer();
   }
+  AppOpenAdManager1 appOpenAdManager = AppOpenAdManager1();
 
   @override
   void dispose() {
+    appOpenAdManager.loadAd();
+    Future.delayed(const Duration(seconds: 10), () {
+      appOpenAdManager.showAdIfAvailable();
+    });
+    _ad?.dispose();
+    _ad1?.dispose();
     _interstitialAd?.dispose();
     _rewardedInterstitialAd?.dispose();
     _rewardedAd?.dispose();
@@ -383,60 +434,77 @@ class _GameScreenState extends State<GameScreen> {
     return Scaffold(
       backgroundColor: kGameScreenBackgroundColor1,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(25, 10, 10, 0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: SizedBox(
-                  height: 40.0,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        value: seconds/maxSeconds,
-                        valueColor: AlwaysStoppedAnimation(kProfileContainerColor),
-                        backgroundColor: Colors.white,
-                      ),
-                      Text(
-                        '$seconds',
-                        style: kYourTurnText.copyWith(fontSize: 20.0),
-                      ),
-                    ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(25, 10, 10, 0),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: SizedBox(
+                    height: 40.0,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          value: seconds/maxSeconds,
+                          valueColor: AlwaysStoppedAnimation(kProfileContainerColor),
+                          backgroundColor: Colors.white,
+                        ),
+                        Text(
+                          '$seconds',
+                          style: kYourTurnText.copyWith(fontSize: 20.0),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            EntireRowInGameScreen(),
-            Padding(
-              padding: EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 0.0),
-              child: Container(
-                width: UI.deviceW - 50,
-                height: UI.deviceW - 50,
-                decoration: BoxDecoration(
-                  color: kGameScreenBackgroundColor2,
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-                child: Center(
-                  child: Wrap(
-                    direction: Axis.vertical,
-                    children: [
-                      WrappingContainer(onTap: (){fun(0,0,0);}, letter: UI.isSelected[0] ?  UI.character: "",containerNo: 0,),
-                      WrappingContainer(onTap: (){fun(1,0,1);}, letter: UI.isSelected[1] ?  UI.character: "",containerNo: 1,),
-                      WrappingContainer(onTap: (){fun(2,0,2);}, letter: UI.isSelected[2] ?  UI.character: "",containerNo: 2,),
-                      WrappingContainer(onTap: (){fun(0,1,3);}, letter: UI.isSelected[3] ?  UI.character: "",containerNo: 3,),
-                      WrappingContainer(onTap: (){fun(1,1,4);}, letter: UI.isSelected[4] ?  UI.character: "",containerNo: 4,),
-                      WrappingContainer(onTap: (){fun(2,1,5);}, letter: UI.isSelected[5] ?  UI.character: "",containerNo: 5,),
-                      WrappingContainer(onTap: (){fun(0,2,6);}, letter: UI.isSelected[6] ?  UI.character: "",containerNo: 6,),
-                      WrappingContainer(onTap: (){fun(1,2,7);}, letter: UI.isSelected[7] ?  UI.character: "",containerNo: 7,),
-                      WrappingContainer(onTap: (){fun(2,2,8);}, letter: UI.isSelected[8] ?  UI.character: "",containerNo: 8,),
-                    ]
+              EntireRowInGameScreen(),
+              Padding(
+                padding: EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 0.0),
+                child: Container(
+                  width: UI.deviceW - 50,
+                  height: UI.deviceW - 50,
+                  decoration: BoxDecoration(
+                    color: kGameScreenBackgroundColor2,
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  child: Center(
+                    child: Wrap(
+                      direction: Axis.vertical,
+                      children: [
+                        WrappingContainer(onTap: (){fun(0,0,0);}, letter: UI.isSelected[0] ?  UI.character: "",containerNo: 0,),
+                        WrappingContainer(onTap: (){fun(1,0,1);}, letter: UI.isSelected[1] ?  UI.character: "",containerNo: 1,),
+                        WrappingContainer(onTap: (){fun(2,0,2);}, letter: UI.isSelected[2] ?  UI.character: "",containerNo: 2,),
+                        WrappingContainer(onTap: (){fun(0,1,3);}, letter: UI.isSelected[3] ?  UI.character: "",containerNo: 3,),
+                        WrappingContainer(onTap: (){fun(1,1,4);}, letter: UI.isSelected[4] ?  UI.character: "",containerNo: 4,),
+                        WrappingContainer(onTap: (){fun(2,1,5);}, letter: UI.isSelected[5] ?  UI.character: "",containerNo: 5,),
+                        WrappingContainer(onTap: (){fun(0,2,6);}, letter: UI.isSelected[6] ?  UI.character: "",containerNo: 6,),
+                        WrappingContainer(onTap: (){fun(1,2,7);}, letter: UI.isSelected[7] ?  UI.character: "",containerNo: 7,),
+                        WrappingContainer(onTap: (){fun(2,2,8);}, letter: UI.isSelected[8] ?  UI.character: "",containerNo: 8,),
+                      ]
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+              if (_ad != null)
+                SizedBox(height: 20,),if (_ad != null)
+                Container(
+                  width: _ad!.size.width.toDouble(),
+                  height: _ad!.size.height.toDouble(),
+                  alignment: Alignment.center,
+                  child: AdWidget(ad: _ad!),
+                ), if (_ad1 != null)
+                SizedBox(height: 20,),if (_ad1 != null)
+                Container(
+                  width: _ad1!.size.width.toDouble(),
+                  height: _ad1!.size.height.toDouble(),
+                  alignment: Alignment.center,
+                  child: AdWidget(ad: _ad1!),
+                )
+            ],
+          ),
         ),
       ),
     );
